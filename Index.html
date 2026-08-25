@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volatility Analysis Tool</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #07111f;
+      color: #eaf2ff;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0b1b30;
+      border-bottom: 1px solid #183553;
+      padding: 16px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 21px;
+      font-weight: 800;
+      color: #4da3ff;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: #ef4444;
+      border-radius: 50%;
+    }
+
+    .dot.connected {
+      background: #22c55e;
+    }
+
+    main {
+      max-width: 1400px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .panel {
+      background: #0b1b30;
+      border: 1px solid #183553;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #8fc7ff;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 180px 120px 120px;
+      gap: 10px;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #23476d;
+      background: #071525;
+      color: white;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #3498ff;
+    }
+
+    button {
+      cursor: pointer;
+      background: #1478d4;
+      border: none;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0e65b6;
+    }
+
+    .disconnect {
+      background: #9f2735;
+    }
+
+    .disconnect:hover {
+      background: #7e1e2a;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      background: #071525;
+      border: 1px solid #183553;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .label {
+      color: #7f9bb8;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .digits {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .digit {
+      background: #071525;
+      border: 1px solid #183553;
+      border-radius: 8px;
+      text-align: center;
+      padding: 12px 5px;
+    }
+
+    .digit-number {
+      font-size: 20px;
+      font-weight: bold;
+      color: #4da3ff;
+    }
+
+    .digit-percent {
+      font-size: 12px;
+      margin-top: 5px;
+      color: #a9bed3;
+    }
+
+    .bar {
+      height: 6px;
+      background: #172d45;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #3298ff;
+      width: 0%;
+      transition: width .3s;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 13px 0;
+      border-bottom: 1px solid #183553;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-value {
+      font-weight: bold;
+    }
+
+    .analysis-box {
+      background: #071525;
+      border: 1px solid #183553;
+      border-radius: 10px;
+      padding: 15px;
+      line-height: 1.7;
+      color: #b8cce0;
+    }
+
+    .tick-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .tick-table th,
+    .tick-table td {
+      padding: 9px;
+      border-bottom: 1px solid #183553;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .tick-table th {
+      color: #7fafd8;
+    }
+
+    .empty {
+      color: #71879e;
+      text-align: center;
+      padding: 30px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #617890;
+      padding: 25px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .controls,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      main {
+        padding: 12px;
+      }
+
+      header {
+        padding: 14px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .digits {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">⚡ VOLATILITY ANALYSIS</div>
+
+  <div class="status">
+    <span id="statusDot" class="dot"></span>
+    <span id="statusText">Disconnected</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- API CONNECTION -->
+  <section class="panel">
+    <h2>API CONNECTION</h2>
+
+    <div class="controls">
+      <input
+        id="apiToken"
+        type="password"
+        placeholder="Enter your Deriv API token"
+        autocomplete="off"
+      >
+
+      <select id="symbol">
+        <option value="R_10">Volatility 10</option>
+        <option value="R_25">Volatility 25</option>
+        <option value="R_50">Volatility 50</option>
+        <option value="R_75">Volatility 75</option>
+        <option value="R_100">Volatility 100</option>
+        <option value="1HZ10V">Volatility 10 (1s)</option>
+        <option value="1HZ25V">Volatility 25 (1s)</option>
+        <option value="1HZ50V">Volatility 50 (1s)</option>
+        <option value="1HZ75V">Volatility 75 (1s)</option>
+        <option value="1HZ100V">Volatility 100 (1s)</option>
+      </select>
+
+      <button onclick="connect()">CONNECT</button>
+
+      <button class="disconnect" onclick="disconnect()">DISCONNECT</button>
+    </div>
+
+    <p style="margin-top:10px;color:#71879e;font-size:12px;">
+      Your token is entered locally in the browser and is not included in this source code.
+    </p>
+  </section>
+
+
+  <!-- MARKET SUMMARY -->
+  <section class="panel">
+    <h2>LIVE MARKET</h2>
+
+    <div class="cards">
+
+      <div class="card">
+        <div class="label">MARKET</div>
+        <div class="value" id="marketName">Volatility 10</div>
+      </div>
+
+      <div class="card">
+        <div class="label">CURRENT PRICE</div>
+        <div class="value" id="price">—</div>
+      </div>
+
+      <div class="card">
+        <div class="label">LAST DIGIT</div>
+        <div class="value" id="lastDigit">—</div>
+      </div>
+
+      <div class="card">
+        <div class="label">TICKS RECEIVED</div>
+        <div class="value" id="tickCount">0</div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <div class="grid">
+
+    <!-- DIGIT ANALYSIS -->
+    <section class="panel">
+      <h2>DIGIT DISTRIBUTION</h2>
+
+      <div id="digits" class="digits">
+        <!-- Created by JavaScript -->
+      </div>
+    </section>
+
+
+    <!-- EVEN ODD -->
+    <section class="panel">
+      <h2>EVEN / ODD STATISTICS</h2>
+
+      <div class="stat-row">
+        <span>Even</span>
+        <span class="stat-value" id="even">0%</span>
+      </div>
+
+      <div class="bar">
+        <div id="evenBar" class="bar-fill"></div>
+      </div>
+
+      <div class="stat-row">
+        <span>Odd</span>
+        <span class="stat-value" id="odd">0%</span>
+      </div>
+
+      <div class="bar">
+        <div id="oddBar" class="bar-fill"></div>
+      </div>
+
+    </section>
+
+
+    <!-- OVER UNDER -->
+    <section class="panel">
+      <h2>OVER / UNDER STATISTICS</h2>
+
+      <select id="barrier" onchange="updateAnalysis()">
+        <option value="0">Barrier 0</option>
+        <option value="1">Barrier 1</option>
+        <option value="2">Barrier 2</option>
+        <option value="3">Barrier 3</option>
+        <option value="4">Barrier 4</option>
+        <option value="5" selected>Barrier 5</option>
+        <option value="6">Barrier 6</option>
+        <option value="7">Barrier 7</option>
+        <option value="8">Barrier 8</option>
+        <option value="9">Barrier 9</option>
+      </select>
+
+      <div class="stat-row">
+        <span>Over</span>
+        <span class="stat-value" id="over">0%</span>
+      </div>
+
+      <div class="stat-row">
+        <span>Under</span>
+        <span class="stat-value" id="under">0%</span>
+      </div>
+
+    </section>
+
+
+    <!-- PATTERN ANALYSIS -->
+    <section class="panel">
+      <h2>PATTERN ANALYSIS</h2>
+
+      <div class="analysis-box">
+        <div>Sample size: <strong id="sampleSize">0</strong></div>
+        <div>Longest even streak: <strong id="evenStreak">0</strong></div>
+        <div>Longest odd streak: <strong id="oddStreak">0</strong></div>
+        <div>Repeated sequences detected: <strong id="patterns">0</strong></div>
+        <div>Data status: <strong id="dataQuality">Waiting for data</strong></div>
+      </div>
+
+    </section>
+
+  </div>
+
+
+  <!-- RECENT TICKS -->
+  <section class="panel">
+    <h2>RECENT TICKS</h2>
+
+    <table class="tick-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Price</th>
+          <th>Digit</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+
+      <tbody id="tickTable">
+        <tr>
+          <td colspan="4" class="empty">
+            Connect to a live data source to begin.
+          </td>
+        </tr>
+      </tbody>
+
+    </table>
+  </section>
+
+
+  <div class="footer">
+    Volatility Analysis Tool • Statistical data dashboard
+  </div>
+
+</main>
+
+
+<script>
+
+  let socket = null;
+
+  let ticks = [];
+
+  const MAX_TICKS = 1000;
+
+
+  // Create digit cards
+  function createDigitCards() {
+
+    const container = document.getElementById("digits");
+
+    container.innerHTML = "";
+
+    for (let i = 0; i <= 9; i++) {
+
+      container.innerHTML += `
+        <div class="digit">
+          <div class="digit-number">${i}</div>
+
+          <div class="digit-percent" id="digit-${i}">
+            0%
+          </div>
+
+          <div class="bar">
+            <div
+              class="bar-fill"
+              id="digit-bar-${i}">
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+
+  // Connect to data source
+  function connect() {
+
+    const token = document.getElementById("apiToken").value.trim();
+
+    if (!token) {
+      alert("Enter your API token first.");
+      return;
+    }
+
+    disconnect();
+
+    setStatus("Connecting...", false);
+
+    /*
+      IMPORTANT:
+
+      We will add the authenticated Deriv WebSocket
+      implementation in the next stage.
+
+      Do not put your actual token inside this source code.
+    */
+
+    setStatus("Token entered — connection module next", false);
+  }
+
+
+  // Disconnect
+  function disconnect() {
+
+    if (socket) {
+
+      socket.close();
+
+      socket = null;
+    }
+
+    setStatus("Disconnected", false);
+  }
+
+
+  // Connection status
+  function setStatus(text, connected) {
+
+    document.getElementById("statusText").textContent = text;
+
+    const dot = document.getElementById("statusDot");
+
+    if (connected) {
+      dot.classList.add("connected");
+    } else {
+      dot.classList.remove("connected");
+    }
+  }
+
+
+  // Process incoming tick
+  function processTick(price) {
+
+    const number = Number(price);
+
+    if (!Number.isFinite(number)) return;
+
+    const text = number.toString();
+
+    const digit = Number(
+      text.replace(".", "").slice(-1)
+    );
+
+    ticks.push({
+      price: number,
+      digit: digit,
+      time: new Date()
+    });
+
+    if (ticks.length > MAX_TICKS) {
+      ticks.shift();
+    }
+
+    updateDashboard();
+  }
+
+
+  // Update dashboard
+  function updateDashboard() {
+
+    const total = ticks.length;
+
+    document.getElementById("tickCount").textContent = total;
+
+    document.getElementById("sampleSize").textContent = total;
+
+    if (!total) return;
+
+
+    const latest = ticks[ticks.length - 1];
+
+    document.getElementById("price").textContent =
+      latest.price;
+
+    document.getElementById("lastDigit").textContent =
+      latest.digit;
+
+
+    // Digit counts
+    const counts = Array(10).fill(0);
+
+    ticks.forEach(tick => {
+
+      if (tick.digit >= 0 && tick.digit <= 9) {
+        counts[tick.digit]++;
+      }
+
+    });
+
+
+    // Digit percentages
+    for (let i = 0; i <= 9; i++) {
+
+      const percentage =
+        (counts[i] / total) * 100;
+
+      document.getElementById(`digit-${i}`).textContent =
+        percentage.toFixed(1) + "%";
+
+      document.getElementById(`digit-bar-${i}`).style.width =
+        percentage + "%";
+    }
+
+
+    // Even / odd
+    const evenCount =
+      ticks.filter(t => t.digit % 2 === 0).length;
+
+    const oddCount = total - evenCount;
+
+    const evenPercent =
+      (evenCount / total) * 100;
+
+    const oddPercent =
+      (oddCount / total) * 100;
+
+    document.getElementById("even").textContent =
+      evenPercent.toFixed(1) + "%";
+
+    document.getElementById("odd").textContent =
+      oddPercent.toFixed(1) + "%";
+
+    document.getElementById("evenBar").style.width =
+      evenPercent + "%";
+
+    document.getElementById("oddBar").style.width =
+      oddPercent + "%";
+
+
+    updateAnalysis();
+
+    updateTickTable();
+
+  }
+
+
+  // Over / under statistics
+  function updateAnalysis() {
+
+    const barrier =
+      Number(document.getElementById("barrier").value);
+
+    if (!ticks.length) return;
+
+    const over =
+      ticks.filter(t => t.digit > barrier).length;
+
+    const under =
+      ticks.filter(t => t.digit < barrier).length;
+
+    const usable = over + under;
+
+    if (usable === 0) return;
+
+    document.getElementById("over").textContent =
+      ((over / usable) * 100).toFixed(1) + "%";
+
+    document.getElementById("under").textContent =
+      ((under / usable) * 100).toFixed(1) + "%";
+
+
+    calculateStreaks();
+
+  }
+
+
+  // Calculate even/odd streaks
+  function calculateStreaks() {
+
+    let evenCurrent = 0;
+    let oddCurrent = 0;
+
+    let maxEven = 0;
+    let maxOdd = 0;
+
+    for (const tick of ticks) {
+
+      if (tick.digit % 2 === 0) {
+
+        evenCurrent++;
+        oddCurrent = 0;
+
+        maxEven =
+          Math.max(maxEven, evenCurrent);
+
+      } else {
+
+        oddCurrent++;
+        evenCurrent = 0;
+
+        maxOdd =
+          Math.max(maxOdd, oddCurrent);
+      }
+
+    }
+
+    document.getElementById("evenStreak").textContent =
+      maxEven;
+
+    document.getElementById("oddStreak").textContent =
+      maxOdd;
+
+
+    // Simple repeated adjacent sequence counter
+    let repeated = 0;
+
+    for (let i = 2; i < ticks.length; i++) {
+
+      if (
+        ticks[i].digit === ticks[i - 2].digit &&
+        ticks[i].digit !== ticks[i - 1].digit
+      ) {
+        repeated++;
+      }
+    }
+
+    document.getElementById("patterns").textContent =
+      repeated;
+
+    document.getElementById("dataQuality").textContent =
+      ticks.length >= 100
+        ? "Sufficient sample"
+        : "Collecting data";
+  }
+
+
+  // Recent tick table
+  function updateTickTable() {
+
+    const table =
+      document.getElementById("tickTable");
+
+    const recent =
+      ticks.slice(-15).reverse();
+
+    table.innerHTML = "";
+
+    recent.forEach(tick => {
+
+      const type =
+        tick.digit % 2 === 0
+          ? "Even"
+          : "Odd";
+
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${tick.time.toLocaleTimeString()}</td>
+        <td>${tick.price}</td>
+        <td>${tick.digit}</td>
+        <td>${type}</td>
+      `;
+
+      table.appendChild(row);
+
+    });
+
+  }
+
+
+  // Market selector
+  document
+    .getElementById("symbol")
+    .addEventListener("change", function() {
+
+      const selected =
+        this.options[this.selectedIndex].text;
+
+      document.getElementById("marketName").textContent =
+        selected;
+
+    });
+
+
+  // Initialize
+  createDigitCards();
+
+</script>
+
+</body>
+  </html>
